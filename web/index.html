@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="玉石 AI 智能顾问：图片初步分析、选购建议与购买风险提示。" />
+  <title>玉石 AI 智能顾问</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="brand"><span class="brand-mark">玉</span><span>玉石 AI</span></div>
+    <button class="ghost-btn" id="humanBtn">人工咨询</button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="eyebrow">JADE AI CONSULTANT</div>
+      <h1>懂玉，也懂你的购买需求。</h1>
+      <p class="hero-copy">上传一张玉石图片，告诉我预算、用途和要求。玉石 AI 顾问会从可见特征出发，帮你梳理信息、识别风险、建立选购思路。</p>
+      <div class="hero-actions">
+        <label class="upload-btn" for="imageInput">上传玉石图片</label>
+        <input id="imageInput" type="file" accept="image/*" hidden />
+        <button class="secondary-btn" id="startBtn">开始咨询</button>
+      </div>
+      <div class="trust-row"><span>AI 初步分析</span><span>不替代专业鉴定</span><span>以降低购买风险为优先</span></div>
+    </section>
+
+    <section class="consultant" id="consultant">
+      <div class="section-head"><div><div class="eyebrow">AI CONSULTATION</div><h2>玉石 AI 顾问</h2></div><span class="status"><i></i>在线</span></div>
+      <div class="chat" id="chat">
+        <div class="message assistant"><div class="avatar">玉</div><div class="bubble"><strong>你好，我是玉石 AI 顾问。</strong><br/>你可以直接告诉我想买什么、预算多少；如果已经有目标玉石，也可以上传图片。我会先帮你做<strong> AI 初步分析</strong>，再告诉你哪些地方值得进一步核实。</div></div>
+        <div class="quick"><button data-q="我想买一只翡翠手镯，预算 1 万元">翡翠手镯 · 预算 1 万</button><button data-q="帮我看看这块玉有没有明显风险">看看这块玉的风险</button><button data-q="和田玉应该怎么挑？">和田玉怎么挑</button></div>
+      </div>
+      <div class="composer"><textarea id="input" rows="1" placeholder="输入你的问题，例如：预算 2 万，想买一只日常佩戴的翡翠手镯……"></textarea><button id="sendBtn">发送</button></div>
+      <div class="disclaimer">提示：AI 只能基于你提供的文字和图片做初步判断，不能替代实验室检测、专业鉴定或鉴定证书。</div>
+    </section>
+
+    <section class="analysis" id="analysis">
+      <div class="eyebrow">ANALYSIS FRAMEWORK</div><h2>我们重点帮你看什么？</h2>
+      <div class="cards">
+        <article><span>01</span><h3>基础视觉信息</h3><p>颜色、透明度、光泽、纹理与图片中可见的表面特征。</p></article>
+        <article><span>02</span><h3>品质与风险</h3><p>梳理可能影响价值与购买风险的因素，并明确哪些信息无法从照片确认。</p></article>
+        <article><span>03</span><h3>购买建议</h3><p>结合预算、用途和产品类型，建立更实际的比较与核验路径。</p></article>
+      </div>
+    </section>
+
+    <section class="lead" id="lead">
+      <div><div class="eyebrow">HUMAN HANDOFF</div><h2>需要进一步看货？</h2><p>如果你准备购买、已经锁定某件产品，或者希望人工进一步沟通，可以留下联系方式。</p></div>
+      <form id="leadForm"><input id="name" placeholder="称呼" /><input id="contact" placeholder="微信 / 手机 / WhatsApp" required /><button type="submit">提交咨询</button></form>
+      <div class="success" id="success">已收到你的咨询信息。人工顾问会进一步联系你。</div>
+    </section>
+  </main>
+
+  <footer>玉石 AI 智能顾问 · AI 初步分析，不构成专业鉴定</footer>
+  <script src="./app.js"></script>
+</body>
+</html>
