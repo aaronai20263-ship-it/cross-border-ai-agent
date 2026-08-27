@@ -4,35 +4,33 @@ const imageInput = document.getElementById('imageInput');
 const leadForm = document.getElementById('leadForm');
 const success = document.getElementById('success');
 const sendBtn = document.getElementById('sendBtn');
+const state = { image: null, profile: { product_interest: '', budget: '', use: '' }, session_id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) };
 
-const state = { imageUploaded: false, messages: [], profile: { product_interest: '', budget: '', use: '' } };
-
-function escapeHtml(value) { return String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char])); }
+function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])); }
 function addMessage(text, who = 'user') {
   const row = document.createElement('div'); row.className = `message ${who}`; row.style.marginTop = '18px';
   row.innerHTML = who === 'assistant' ? `<div class="avatar">玉</div><div class="bubble">${text}</div>` : `<div class="bubble" style="margin-left:auto;background:#171714;color:#fff;border-radius:18px 4px 18px 18px">${escapeHtml(text)}</div>`;
-  chat.appendChild(row); chat.scrollTop = chat.scrollHeight; state.messages.push({ who, text });
+  chat.appendChild(row); chat.scrollTop = chat.scrollHeight;
 }
 function inferProfile(text) {
-  if (/翡翠|手镯|吊坠|戒指|和田玉|玉牌|手串/.test(text)) state.profile.product_interest = text.match(/翡翠|手镯|吊坠|戒指|和田玉|玉牌|手串/)?.[0] || '';
-  if (/\d[\d,.]*\s*(万|元|块)/.test(text)) state.profile.budget = text.match(/\d[\d,.]*\s*(?:万|元|块)/)?.[0] || '';
-  if (/送人|收藏|日常|佩戴|投资/.test(text)) state.profile.use = text.match(/送人|收藏|日常|佩戴|投资/)?.[0] || '';
+  const p = state.profile;
+  const product = text.match(/翡翠|和田玉|手镯|吊坠|戒指|玉牌|手串/); if (product) p.product_interest = product[0];
+  const budget = text.match(/(?:预算|大概|约|准备花)\s*([\d,.]+\s*(?:万|元|块))/); if (budget) p.budget = budget[1];
+  const use = text.match(/送人|收藏|日常|佩戴/); if (use) p.use = use[0];
 }
-function reply(text) {
-  inferProfile(text); let next;
-  if (state.imageUploaded) {
-    next = `我已经记录了你的图片。基于目前提供的信息，我会先做<strong>可见特征层面的初步分析</strong>，重点看颜色、光泽、透明度表现、纹理、表面状态与明显瑕疵。<br/><br/>但<strong>仅凭普通照片不能确认天然/处理、真伪、内部结构或实验室鉴定结论</strong>。如果你准备实际购买，我会优先帮你找出需要向卖家核实的关键点。`;
-  } else if (!state.profile.budget || !state.profile.product_interest) {
-    next = `可以。为了让建议真正有用，我先补齐两个关键变量：<strong>你想买什么，以及预算大约多少？</strong><br/><br/>例如：“翡翠手镯，预算 1–2 万，日常佩戴”。如果已经有具体商品，也可以直接上传图片。`;
-  } else {
-    next = `收到。你的需求是<strong>${escapeHtml(state.profile.product_interest)}</strong>${state.profile.budget ? `，预算约 <strong>${escapeHtml(state.profile.budget)}</strong>` : ''}。<br/><br/>下一步我会从<strong>材质与可见特征 → 品质因素 → 购买风险 → 预算匹配 → 核验清单</strong>来分析，而不是直接给出“真假”或一个武断价格。<br/><br/>如果你有具体商品图片，现在可以上传，我会继续分析。`;
-  }
-  setTimeout(() => addMessage(next, 'assistant'), 320);
+async function askAI(message) {
+  inferProfile(message); sendBtn.disabled = true; sendBtn.textContent = '分析中…';
+  try {
+    const res = await fetch('/api/chat', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ message, profile: state.profile, session_id: state.session_id, image: state.image }) });
+    const data = await res.json(); if (!res.ok) throw new Error(data.error || 'AI 服务暂不可用');
+    state.profile = data.profile || state.profile; addMessage(escapeHtml(data.answer).replace(/\n/g, '<br>'), 'assistant');
+  } catch (err) { addMessage(`<strong>暂时无法完成 AI 分析。</strong><br>${escapeHtml(err.message)}<br><br>请检查后端服务和 AI_API_KEY 配置。`, 'assistant'); }
+  finally { sendBtn.disabled = false; sendBtn.textContent = '发送'; }
 }
-sendBtn.onclick = () => { const value = input.value.trim(); if (!value) return; addMessage(value); input.value = ''; reply(value); };
-input.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendBtn.click(); } });
-document.querySelectorAll('.quick button').forEach(button => button.onclick = () => { input.value = button.dataset.q; sendBtn.click(); });
-document.getElementById('startBtn').onclick = () => document.getElementById('consultant').scrollIntoView({ behavior: 'smooth' });
-document.getElementById('humanBtn').onclick = () => document.getElementById('lead').scrollIntoView({ behavior: 'smooth' });
-imageInput.onchange = () => { const file = imageInput.files?.[0]; if (!file) return; state.imageUploaded = true; addMessage(`已上传图片：${file.name}`); reply('image'); };
-leadForm.onsubmit = event => { event.preventDefault(); success.classList.add('show'); leadForm.reset(); };
+sendBtn.onclick = () => { const value = input.value.trim(); if (!value) return; addMessage(value); input.value = ''; askAI(value); };
+input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendBtn.click(); } });
+document.querySelectorAll('.quick button').forEach(b => b.onclick = () => { input.value = b.dataset.q; sendBtn.click(); });
+document.getElementById('startBtn').onclick = () => document.getElementById('consultant').scrollIntoView({behavior:'smooth'});
+document.getElementById('humanBtn').onclick = () => document.getElementById('lead').scrollIntoView({behavior:'smooth'});
+imageInput.onchange = () => { const file = imageInput.files?.[0]; if (!file) return; if (file.size > 8 * 1024 * 1024) { alert('图片不能超过 8MB'); imageInput.value=''; return; } const reader = new FileReader(); reader.onload = () => { state.image = reader.result; state.imageUploaded = true; addMessage(`已上传图片：${file.name}`); askAI('我上传了一张玉石图片，请先做可见特征层面的初步分析，并告诉我还需要哪些信息。'); }; reader.readAsDataURL(file); };
+leadForm.onsubmit = async e => { e.preventDefault(); const contact = document.getElementById('contact').value.trim(); if (!contact) return; const lastQuestion = [...chat.querySelectorAll('.message.user .bubble')].pop()?.textContent || ''; const res = await fetch('/api/leads', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name: document.getElementById('name').value.trim(), contact, source:'web', product_interest:state.profile.product_interest, budget:state.profile.budget, user_question:lastQuestion, image_uploaded:Boolean(state.image), ai_summary:'由玉石 AI 顾问会话生成；等待人工跟进。'})}); const data = await res.json(); if (!res.ok) { alert(data.error || '提交失败'); return; } success.classList.add('show'); leadForm.reset(); };
